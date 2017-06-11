@@ -12,20 +12,14 @@ textColorWhite = GD.rgb 255 255 255
 textColorBlack :: GD.Color
 textColorBlack = GD.rgb 0 0 0
 
-textSize :: TextSize
-textSize = 32.0
-
 initialTextSize :: TextSize
 initialTextSize = 200.0
 
-padding :: Int
-padding = 10
+paddingPercentage :: Int
+paddingPercentage = 3
 
 quality :: Int
 quality = 85
-
-targetBlockRatio :: Double
-targetBlockRatio = 4
 
 -- (Width, Height)
 type Dimensions = (Int, Int)
@@ -46,9 +40,10 @@ generateBlock text imgDim = go $ createBlock text
   where
     go :: Block -> IO (Block, TextSize)
     go block = do
-      (textSize, dimensions) <- getBlockDimensions block imgDim
-      let ratio = getRatio dimensions
       let (imgW, imgH) = imgDim
+      let padding = getPadding (imgW, imgH)
+      (textSize, dimensions) <- getBlockDimensions block (imgW - 2 * padding, imgH - 2 * padding)
+      let ratio = getRatio dimensions
       let targetRatio = getRatio (imgW, imgH `div` 5)
 --      putStrLn $ "Current ratio is: " ++ show ratio ++
 --        " Current block dimensions: " ++ show dimensions ++
@@ -66,15 +61,18 @@ getRatio (width, height) = fromIntegral width /  fromIntegral height
 renderBlock :: GD.Image -> (Block, TextSize) -> IO GD.Image
 renderBlock img (block, size) = do
   (imgW, imgH) <- GD.imageSize img
-  (size, (blockW, blockH)) <- getBlockDimensions block (imgW, imgH)
+  let padding = getPadding (imgW, imgH)
+  (size, (blockW, blockH)) <- getBlockDimensions block (imgW - padding, imgH - padding)
   putStrLn $ "rendering block with dimensions: " ++ show (blockW, blockH)
   renderLines block (lineHeight blockH) blockH
   where
     renderLines :: Block -> Int -> Int -> IO GD.Image
     renderLines [] _  _ = return img
     renderLines (x:xs) offset blockH = do
-      _ <- GD.drawString "sans" size 0.0 (0+3, offset+3) (unwords x) textColorBlack img
-      _  <- GD.drawString "sans" size 0.0 (0, offset) (unwords x) textColorWhite img
+      (imgW, imgH) <- GD.imageSize img
+      let padding = getPadding (imgW, imgH)
+      _ <- GD.drawString "sans" size 0.0 (0 + 3 + padding, offset + 3 + padding) (unwords x) textColorBlack img
+      _  <- GD.drawString "sans" size 0.0 (0 + padding, offset + padding) (unwords x) textColorWhite img
       renderLines xs (offset + lineHeight blockH) blockH
 
     lineHeight x = x `div` (length block)
@@ -91,7 +89,10 @@ getLineDimensions line imgDim= do
   return (fontSize, dimensions)
 
 getLineFontSize :: Line -> Dimensions -> IO Double
-getLineFontSize = getStringFontSize . unwords  
+getLineFontSize = getStringFontSize . unwords
+
+getPadding :: Dimensions -> Int
+getPadding (imgW, imgH) = (paddingPercentage * imgW) `div` 100
 
 getStringFontSize :: MemeText -> Dimensions -> IO Double
 getStringFontSize text imgSize = go initialTextSize
