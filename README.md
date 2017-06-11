@@ -3,6 +3,8 @@
 This is a small command line meme generator written in Haskell. 
 It basically renders a given text onto a given image in JPEG format.
 
+![Example meme generated with memecli](example/example.jpg?raw=true "Example Meme")
+
 ## Motivation
 This code has been created during the [ZuriHac2017](https://zurihac.info) hackathon. It has been written for learning purposes and thus is of inferior quality. Though you might very well use this for educational purposes, productive use is discouraged at this point. 
 
